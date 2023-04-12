@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <link th:href="@{/css/bootstrap.min.css}" href="../../css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .container {
+            max-width: 560px;
+        }
+        .field-error {
+            border-color: #dc3545;
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="py-5 text-center">
+        <h2 th:text="#{page.addItem}">상품 등록 폼</h2>
+    </div>
+    <h4 class="mb-3" th:text="#{page.addItem.enterItem}">상품 입력</h4>
+    <form action="item.html" th:action th:object="${item}" method="post"> <!--/* form 에 이렇게 연결되는 객체를 커맨드 객체라고 함 */-->
+
+        <div th:if="${errors?.containsKey('globalError')}">
+            <p class="field-error" th:text="${errors['globalError']}">전체 오류 메시지</p>
+        </div>
+
+        <div>
+          <!--/* th:field="${item.itemName}" -> id, name 을 itemName 이란 이름으로 랜더링 시 자동으로 만들어줌 (객체의 변수명)  */-->
+          <!--/* 근데 th:object 를 위처럼 선언했으면 th:field="*{XXX}" 만 해도 object 에 소속된 걸로 인지하여 랜더링 시 item.XXX 로 바꿔줌  */-->
+          <!--/* id 를 지우면 ide 에서 label for 속성에서 인식을 못하지만 실제로는 상관없음  */-->
+          <!--/* field 를 쓰면 오타 시 오류페이지를 보여주므로 개발단계에서 빠르게 오류를 찾을 수도 있음  */-->
+          <!--/* *{XXX} => 선택 변수식  */-->
+<!--            th:class="${errors?.containsKey('itemName')} ? 'form-control field-error' : 'form-control'"-->
+            <label for="itemName" th:text="#{label.item.itemName}">상품명</label>
+            <input type="text" th:field="*{itemName}" class="form-control"
+                   th:classappend="${errors?.containsKey('itemName')} ? 'field-error' : _"
+                   th:placeholder="#{placeholder.item.itemName}" placeholder="이름을 입력하세요" />
+            <p class="field-error" th:if="${errors?.containsKey('itemName')}" th:text="${errors['itemName']}">이름 오류</p>
+        </div>
+        <div>
+            <label for="price" th:text="#{label.item.price}">가격</label>
+            <input type="text" th:field="*{price}" class="form-control"
+                   th:placeholder="#{placeholder.item.price}"
+                   th:classappend="${errors?.containsKey('itemName')} ? 'field-error' : _"
+                   placeholder="가격을 입력하세요" />
+            <p class="field-error" th:if="${errors?.containsKey('price')}" th:text="${errors['price']}">가격 오류</p>
+        </div>
+        <div>
+            <label for="quantity" th:text="#{label.item.quantity}">수량</label>
+            <input type="text" th:field="*{quantity}" class="form-control"
+                   th:classappend="${errors?.containsKey('itemName')} ? 'field-error' : _"
+                   th:placeholder="#{placeholder.item.quantity}" placeholder="수량을 입력하세요" />
+            <p class="field-error" th:if="${errors?.containsKey('quantity')}" th:text="${errors['quantity']}">수량 오류</p>
+        </div>
+
+        <hr class="my-4">
+
+        <!-- single checkbox -->
+        <div th:text="#{div.item.isOpen}">판매 여부</div>
+        <div>
+            <div class="form-check">
+
+                <!--/* html 기본 type 으로 checkbox 사용 시 체크하면 on 이라는 값이 들어오지만
+                (스프링 타입 컨버터가 boolean 일 때 알아서 true 로 변환)
+                체크하지 않으면 변수 자체에 값을 보내지 않음(open 이란 이름 자체도 안넘어옴) => 로그 찍어보면 null 로 찍히는 걸 볼 수 있음 */-->
+<!--/*                <input type="checkbox" id="open" name="open" class="form-check-input" /> */-->
+<!--/*                <input type="hidden" name="_open" value="on" /> */-->
+                <!--/* 히든 필드 추가 (이걸 추가하면 스프링 MVC 에서는 open 값이 안넘어온다면 open 이란 이름으로 false 로 찍힘) */-->
+
+                <!-- 여기서는 th:field 만 이용하면 왜인지 id 가 open1 로 만들어짐 (컬렉션 마냥) -->
+                <input type="checkbox" id="open" th:field="*{open}" class="form-check-input"> <!--/* th:field 로 해당 boolean 변수를 설정하면(form tag 안에 th:object 가 있으므로 변수 표현식, 선택 표현식 아무거나 상관없음) 위의 히든 필드를 만들어주는 일을 타임리프가 대신 해준다. */-->
+                <label for="open" class="form-check-label" th:text="#{label.item.open}">판매 오픈</label>
+            </div>
+        </div>
+
+        <!-- multi checkbox -->
+        <div>
+            <div th:text="#{div.item.regions}">등록 지역</div>
+            <!--/* 주의!! 여기서 th:field="*{regions}" 는 th:each 안에 있는 ${regions 가 아닌}
+            위에서 form 속성에 있는 th:object 에 있는 item.regions 임 ==> th:field="${item.regions}" */-->
+            <!--/* th:field 로 인해 반복문을 돌면서 id 가 순서대로 regions1, regions2, ... 방식으로 생성되는 데 (id 는 unique value)
+            이 동적으로 생성되는 id 값을 label 에서 정적으로 알아서 for 속성에 넣어줄 수 없기 때문에
+            ids 객체를 이용하면 'regions' field 에서 생성된 id 를 인식해서 자동으로 그 값을 넣어줌 (prev 이므로 이전에 만든 값)
+            th:field 덕분에 이 체크박스도 name="_XXX" 가 히든으로 만들어지기 때문에, 체크안하고 보내면 null 이 아닌 빈 배열로 넘어감
+            (웹브라우저에서 체크를 하나도 안했을 때, 클라이언트가 서버에 아무런 데이터를 보내지 않는 것을 방지함) */-->
+            <div th:each="region : ${regions}" class="form-check form-check-inline">
+                <input type="checkbox" th:field="*{regions}" th:value="${region.key}" class="form-check-input" />
+                <label th:for="${#ids.prev('regions')}"
+                       th:text="${region.value}" class="form-check-label">서울</label>
+            </div>
+            <p class="field-error" th:if="${errors?.containsKey('regions')}" th:text="${errors['regions']}">등록 지역 오류</p>
+        </div>
+
+        <!-- radio button -->
+        <div>
+            <div th:text="#{div.item.itemTypes}">상품 종류</div>
+            <div th:each="type : ${itemTypes}" class="form-check form-check-inline">
+                <input type="radio" th:field="*{itemType}" th:value="${type.name()}" class="form-check-input" />
+                <label th:for="${#ids.prev('itemType')}"
+                       th:text="${type.description}" class="form-check-label">BOOK</label>
+            </div>
+            <p class="field-error" th:if="${errors?.containsKey('itemType')}" th:text="${errors['itemType']}">상품 종류 오류</p>
+        </div>
+
+        <!-- SELECT -->
+        <div>
+            <div th:text="#{div.item.deliveryCodes}">배송 방식</div>
+            <select th:field="*{deliveryCode}" class="form-select">
+                <option value="" th:text="#{select.option.choose_delivery}">==배송 방식 선택==</option>
+                <option th:each="deliveryCode : ${deliveryCodes}" th:value="${deliveryCode.code}"
+                        th:text="${deliveryCode.displayName}">FAST</option>
+            </select>
+            <p class="field-error" th:if="${errors?.containsKey('deliveryCode')}" th:text="${errors['deliveryCode']}">배송 방식 선택 오류</p>
+        </div>
+
+        <hr class="my-4">
+
+        <div class="row">
+            <div class="col">
+                <button class="w-100 btn btn-primary btn-lg" type="submit" th:text="#{button.save}">상품
+                    등록
+                </button>
+            </div>
+            <div class="col">
+                <button class="w-100 btn btn-secondary btn-lg"
+                        th:onclick="|location.href='@{/validation/v1/items}'|"
+                        onclick="location.href='items.html'" type="button"
+                        th:text="#{button.cancel}">취소
+                </button>
+            </div>
+        </div>
+    </form>
+</div> <!-- /container -->
+</body>
+</html>
